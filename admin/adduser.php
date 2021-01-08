@@ -34,19 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $insert = array(
         'username' => '',
         'email' => '',
-        'passhash' => '',
+        'hash4' => '',
+		'hash3' => '',
+		'hash2' => '',
         'status' => 'confirmed',
         'added' => TIME_NOW,
         'last_access' => TIME_NOW
     );
     if (isset($_POST['username']) && strlen($_POST['username']) >= 5) $insert['username'] = $_POST['username'];
     else stderr($lang['std_err'], $lang['err_username']);
-    if (isset($_POST['password']) && isset($_POST['password2']) && strlen($_POST['password']) > 6 && $_POST['password'] == $_POST['password2']) {
-        $insert['passhash'] = make_passhash($_POST['password']);
-    } else stderr($lang['std_err'], $lang['err_password']);
+    
     if (isset($_POST['email']) && validemail($_POST['email'])) $insert['email'] = htmlsafechars($_POST['email']);
     else stderr($lang['std_err'], $lang['err_email']);
-    if (sql_query(sprintf('INSERT INTO users (username, email, passhash, status, added, last_access) VALUES (%s)', join(', ', array_map('sqlesc', $insert))))) {
+	$secret = mksecret();
+	$insert['hash2'] = t_Hash($insert['email'], $insert['username'], $insert['added']);
+	$insert['hash3'] = t_Hash($secret, $insert['username'], $insert['email']);
+	
+	if (isset($_POST['password']) && isset($_POST['password2']) && strlen($_POST['password']) > 6 && $_POST['password'] == $_POST['password2']) {
+        $insert['hash4'] = make_passhash($insert['hash2'], hash("ripemd160", $_POST['password']), $insert['hash3']);
+    } else stderr($lang['std_err'], $lang['err_password']);
+    if (sql_query(sprintf('INSERT INTO users (username, email, hash4, hash3, hash2, status, added, last_access) VALUES (%s)', join(', ', array_map('sqlesc', $insert))))) {
         $user_id = ((is_null($___mysqli_res = mysqli_insert_id($GLOBALS["___mysqli_ston"]))) ? false : $___mysqli_res);
 		write_log("User account " . (int)$user_id . " (" . htmlsafechars($insert['username']) . ") was created by {$CURUSER['username']}");
         stderr($lang['std_success'], sprintf($lang['text_user_added'], $user_id));

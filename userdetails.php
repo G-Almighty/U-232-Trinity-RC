@@ -117,7 +117,9 @@ if (($user = $cache->get('user' . $id)) === false) {
     );
     $user_fields_ar_str = array(
         'username',
-        'passhash',
+        'hash4',
+		'hash3',
+		'hash2',
         'secret',
         'torrent_pass',
         'email',
