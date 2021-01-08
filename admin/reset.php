@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $uid = (int)$_POST["uid"];
 	$row = (mysqli_fetch_assoc(sql_query("SELECT username, hash2, hash3, email, added, birthday FROM users WHERE username = " . sqlesc($username) . " AND id=" . sqlesc($uid)))); 
 	if((isset($_POST['email']) && $_POST['email'] == $row['email']) || (isset($_POST['birthday']) && $_POST['birthday'] == $row['birthday'])|| (isset($_POST['username']) && $_POST['username'] == $row['username'])){ 
-	    $passhash = make_passhash($row['hash2'], hash("ripemd160", $password), $row['hash3']));
+	    $passhash = make_passhash($row['hash2'], hash("ripemd160", $password), $row['hash3']);
 	$hint = $_POST["hintanswer"];
 	    $wanthintanswer = h_store($hint.$row['email']);
     $postkey = PostKey(array(
