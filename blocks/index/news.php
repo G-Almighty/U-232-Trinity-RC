@@ -29,7 +29,7 @@ if ($news) {
     foreach ($news as $array) {
         $button = '';
         if ($CURUSER['class'] >= UC_STAFF) {
-            $hash = md5('the@@saltto66??' . $array['nid'] . 'add' . '@##mu55y==');
+            $hash = h_store($array['nid']);
             $button = "
     <div class='float-right'>
     <a href='staffpanel.php?tool=news&amp;mode=edit&amp;newsid=" . (int)$array['nid'] . "'>

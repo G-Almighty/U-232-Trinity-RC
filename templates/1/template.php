@@ -296,7 +296,7 @@ if (XBT_TRACKER == true) {
         $cache->set('user_achievement_points_' . $CURUSER['id'], $Achievement_Points);
     }
     $salty_username = isset($CURUSER['username']) ? "{$CURUSER['username']}" : '';
-    $salty = md5("Th15T3xtis5add3dto66uddy6he@water..." . $salty_username . "");
+	$salty = hash("sha3-512", $salty_username.$CURUSER['hash3'].$salty_username);
     $hitnruns = ($CURUSER['hit_and_run_total'] > 0) ? $CURUSER['hit_and_run_total'] : '0';
     $member_reputation = get_reputation($CURUSER);
     $usrclass = $StatusBar = "";

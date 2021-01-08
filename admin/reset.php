@@ -33,25 +33,25 @@ $lang = array_merge($lang, load_language('ad_reset'));
 //== Reset Lost Password
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $username = trim(htmlsafechars($_POST['username']));
+	$password = $_POST['password'];
     $uid = (int)$_POST["uid"];
-    $secret = mksecret();
+	$row = (mysqli_fetch_assoc(sql_query("SELECT username, hash2, hash3, email, added, birthday FROM users WHERE username = " . sqlesc($username) . " AND id=" . sqlesc($uid)))); 
+	if((isset($_POST['email']) && $_POST['email'] == $row['email']) || (isset($_POST['birthday']) && $_POST['birthday'] == $row['birthday'])|| (isset($_POST['username']) && $_POST['username'] == $row['username'])){ 
+	    $passhash = make_passhash($row['hash2'], hash("ripemd160", $password), $row['hash3']));
 	$hint = $_POST["hintanswer"];
-    $newpassword = make_passhash($newpass);
-	$wanthintanswer = md5($hint);
+	    $wanthintanswer = h_store($hint.$row['email']);
     $postkey = PostKey(array(
         $uid,
         $CURUSER['id']
     ));
-    $res = sql_query('UPDATE users SET secret=' . sqlesc($secret) . ', passhash=' . sqlesc($newpassword) . ', hintanswer='.sqlesc($wanthintanswer).' WHERE username=' . sqlesc($username) . ' AND id=' . sqlesc($uid) . ' AND class<' . $CURUSER['class']) or sqlerr(__file__, __line__);
-    $cache->update_row($keys['my_userid'] . $uid, [
+        $res = sql_query("UPDATE users SET hash4=" . sqlesc($passhash) . ", hintanswer=".sqlesc($wanthintanswer)." WHERE username=" . sqlesc($username) . " AND id=" . sqlesc($uid) . " AND class<" . $CURUSER['class']) or sqlerr(__FILE__, __LINE__);
+        $cache->update_row('MyUser_' . $uid, [
         'secret' => $secret,
-        'passhash' => $newpassword,
-        'passhash' => $passhash
+            'hash4' => $passhash
     ], $TRINITY20['expires']['curuser']);
     $cache->update_row('user' . $uid, [
         'secret' => $secret,
-        'passhash' => $newpassword,
-        'passhash' => $passhash
+            'hash4' => $passhash
     ], $TRINITY20['expires']['user_cache']);
 
     if (mysqli_affected_rows($GLOBALS["___mysqli_ston"]) != 1) stderr($lang['reset_stderr'], $lang['reset_stderr1']);
@@ -61,6 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     ) , $postkey) == false) stderr($lang['reset_stderr2'], $lang['reset_stderr3']);
     write_log($lang['reset_pwreset'], $lang['reset_pw_log1'] . htmlsafechars($username) . $lang['reset_pw_log2'] . htmlsafechars($CURUSER['username']));
     stderr($lang['reset_pw_success'], '' . $lang['reset_pw_success1'] . ' <b>' . htmlsafechars($username) . '</b>The hint for' . htmlsafechars($username) . ' is ' . htmlsafechars($hint) . '<b>' . $lang['reset_pw_success2'] . '<b>' . htmlsafechars($newpassword) . '</b>.');
+	} else {
+		stderr($lang['reset_stderr2'], $lang['reset_stderr3']);
+	}
 }
 $HTMLOUT = "";
 $HTMLOUT.= "<div class='row'><div class='col-md-12'><h1>{$lang['reset_title']}</h1>

@@ -84,11 +84,11 @@ if ($step == '1') {
     }
 } elseif ($step == '2') {
     if (!mkglobal('id:answer')) die();
-    $select = sql_query('SELECT id, username, hintanswer FROM users WHERE id = ' . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    $select = sql_query('SELECT id, username, hash2, hash3, hintanswer, email FROM users WHERE id = ' . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
     $fetch = mysqli_fetch_assoc($select);
     if (!$fetch) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error5']}");
     if (empty($answer)) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error6']}");
-    if ($fetch['hintanswer'] != md5($answer)) {
+    if ($fetch['hintanswer'] != h_store($answer.$fetch['email'])) {
         $ip = getip();
         $useragent = $_SERVER['HTTP_USER_AGENT'];
         $msg = "" . htmlsafechars($fetch['username']) . ", on " . get_date(TIME_NOW, '', 1, 0) . ", {$lang['main_message']}" . "\n\n{$lang['main_message1']} " . $ip . " (" . @gethostbyaddr($ip) . ")" . "\n {$lang['main_message2']} " . $useragent . "\n\n {$lang['main_message3']}\n {$lang['main_message4']}\n";
@@ -97,7 +97,7 @@ if ($step == '1') {
         stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error7']}");
     }     else {
                     $sec = mksecret();
-                    $sechash =  md5($sec.$fetch['id'].$fetch['hintanswer']);
+                    $sechash =  h_cook($fetch['hash3'], $fetch['id'], $fetch['hash2']);
                     sql_query("UPDATE users SET editsecret = ".sqlesc($sec)." WHERE id = ".sqlesc($id));
                     $cache->update_row($keys['my_userid'] . $fetch["id"], ['editsecret' => $sec], $TRINITY20['expires']['curuser']);
                     $cache->update_row('user' . $fetch["id"], ['editsecret' => $sec], $TRINITY20['expires']['user_cache']);
@@ -129,19 +129,21 @@ if ($step == '1') {
         }
 } elseif ($step == '3') {
     if (!mkglobal('id:newpass:newpassagain:hash')) die();
-    if (strlen($hash) != 32 || !ctype_xdigit($hash))
+    if (strlen($hash) != 128)
     die('access denied');
-    $select = sql_query('SELECT id, editsecret, hintanswer FROM users WHERE id = ' . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
+    $select = sql_query('SELECT id, hash2, hash3, editsecret, hintanswer email, username, birthday FROM users WHERE id = ' . sqlesc($id)) or sqlerr(__FILE__, __LINE__);
     $fetch = mysqli_fetch_assoc($select) or stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error8']}");
     if (empty($newpass)) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error9']}");
     if ($newpass != $newpassagain) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error10']}");
     if (strlen($newpass) < 6) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error11']}");
-    if (strlen($newpass) > 40) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error12']}");
-    if ($hash != md5($fetch['editsecret'].$fetch['id'].$fetch['hintanswer']))
+    if (strlen($newpass) > 64) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_error12']}");
+    if ($hash != h_cook($fetch['hash3'], $fetch['id'], $fetch['hash2']))
         die('invalid hash');
     $secret = mksecret();
-    $newpassword = make_passhash($newpass);
-    sql_query('UPDATE users SET secret = ' . sqlesc($secret) . ', editsecret = "", passhash=' . sqlesc($newpassword) . ' WHERE id = ' . sqlesc($id) . ' AND editsecret = ' . sqlesc($fetch["editsecret"]));
+	$hash2 = t_Hash($fetch['email'], $fetch['username'], $fetch['added']);
+    $hash3 = t_Hash($secret, $fetch['birthday'], $fetch['email']);
+    $newpassword = make_passhash($hash2, hash("ripemd160", $newpass), $hash3);
+    sql_query('UPDATE users SET secret = ' . sqlesc($secret) . ', editsecret = "", hash4=' . sqlesc($newpassword) . ' hash2=' . sqlesc($hash2) . ' hash3=' . sqlesc($hash3) . ' WHERE id = ' . sqlesc($id) . ' AND editsecret = ' . sqlesc($fetch["editsecret"]));
     $cache->update_row($keys['my_userid'] . $id, [
         'secret' => $secret,
         'editsecret' => '',

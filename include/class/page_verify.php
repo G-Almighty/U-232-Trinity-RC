@@ -32,7 +32,7 @@ class page_verify
         global $CURUSER, $TRINITY20, $_SESSION;
 		$session_task = isset($CURUSER['id']) ? $CURUSER['id'] : '';
         $_SESSION['Task_Time'] = TIME_NOW;
-        $_SESSION['Task'] = md5('user_id:'.$session_task.'::taskname-'.$task_name.'::'.$_SESSION['Task_Time']);
+        $_SESSION['Task'] = hash('haval256,4', 'user_id:'.$session_task.'::taskname-'.$task_name.'::'.$_SESSION['Task_Time']);
         $_SESSION['HTTP_USER_AGENT'] = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
         //$_SESSION['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
     }
@@ -43,7 +43,7 @@ class page_verify
         $returl = str_replace('&amp;', '&', $returl);
         if (isset($_SESSION['HTTP_USER_AGENT']) && $_SESSION['HTTP_USER_AGENT'] != $_SERVER['HTTP_USER_AGENT']) stderr("Error", "Please resubmit the form. <a href='".$returl."'>Click HERE</a>", false);
 		$session_task_id = isset($CURUSER['id']) ? $CURUSER['id'] : '';
-        if (isset($session_task) && $session_task != md5('user_id:'.$session_task_id.'::taskname-'.$task_name.'::'.$_SESSION['Task_Time'])) stderr("Error", "Please resubmit the form. <a href='".$returl."'>Click HERE</a>", false);
+        if (isset($session_task) && $session_task != hash('haval256,4', 'user_id:'.$session_task_id.'::taskname-'.$task_name.'::'.$_SESSION['Task_Time'])) stderr("Error", "Please resubmit the form. <a href='".$returl."'>Click HERE</a>", false);
         $this->create();
     }
 }

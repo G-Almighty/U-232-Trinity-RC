@@ -12,6 +12,7 @@
  */
 require_once(__DIR__ . DIRECTORY_SEPARATOR . 'include' . DIRECTORY_SEPARATOR . 'bittorrent.php');
 require_once(INCL_DIR . 'user_functions.php');
+require_once (INCL_DIR . 'password_functions.php');
 dbconn();
 loggedinorreturn();
 $lang = array_merge(load_language('global'), load_language('createlink'));
@@ -24,11 +25,11 @@ $id = (isset($_GET['id']) ? (int) $_GET['id'] : (isset($_POST['id']) ? (int) $_P
  }
 
 $action = isset($_GET['action']) ? htmlsafechars($_GET['action']) : '';
-$res = sql_query("SELECT hash1, username, passhash FROM users WHERE id = " . sqlesc($id) . " AND class >= " . UC_STAFF) or sqlerr(__FILE__, __LINE__);
+$res = sql_query("SELECT hash1, username, hash3 FROM users WHERE id = " . sqlesc($id) . " AND class >= " . UC_STAFF) or sqlerr(__FILE__, __LINE__);
 $arr = mysqli_fetch_assoc($res);
-$hash1 = md5($arr['username'] . TIME_NOW . $arr['passhash']);
-$hash2 = md5($hash1 . TIME_NOW . $arr['username']);
-$hash3 = md5($hash1 . $hash2 . $arr['passhash']);
+$hash1 = hash('haval192,3', $arr['username'] . TIME_NOW . $arr['hash3']);
+$hash2 = hash('tiger192,3', $hash1 . TIME_NOW . $arr['username']);
+$hash3 = hash('tiger192,3', $hash2 . $arr['hash3']);
 $hash1.= $hash2 . $hash3;
 if ($action == 'reset') {
     $sure = isset($_GET['sure']) ? (int) ($_GET['sure']) : 0;

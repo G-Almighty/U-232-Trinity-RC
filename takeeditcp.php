@@ -139,28 +139,29 @@ $setbits = $clrbits = 0;
     //else $clrbits|= user_options::SIGNATURES;
     if (!mkglobal("email:chpassword:passagain:chmailpass:secretanswer")) stderr($lang['takeeditcp_err'], $lang['takeeditcp_no_data']);
     if ($chpassword != "") {
-        if (strlen($chpassword) > 40) stderr($lang['takeeditcp_err'], $lang['takeeditcp_pass_long']);
+        if (strlen($chpassword) > 64) stderr($lang['takeeditcp_err'], $lang['takeeditcp_pass_long']);
         if ($chpassword != $passagain) stderr($lang['takeeditcp_err'], $lang['takeeditcp_pass_not_match']);
         $secret = mksecret();
-        $passhash = make_passhash($chpassword);
+        $passhash = make_passhash($CURUSER['hash2'], hash("ripemd160", $chpassword), $CURUSER['hash3']);
         $updateset[] = "secret = " . sqlesc($secret);
-        $updateset[] = "passhash = " . sqlesc($passhash);
+        $updateset[] = "hash4 = " . sqlesc($passhash);
         $curuser_cache['secret'] = $secret;
         $user_cache['secret'] = $secret;
-        $curuser_cache['passhash'] = $passhash;
-        $user_cache['passhash'] = $passhash;
-        logincookie($CURUSER["id"], md5($passhash . $_SERVER["REMOTE_ADDR"]));
+        $curuser_cache['hash4'] = $passhash;
+        $user_cache['hash4'] = $passhash;
+		$passh = h_cook($CURUSER['hash2'], $_SERVER["REMOTE_ADDR"], $CURUSER["id"]);
+        logincookie($CURUSER["id"], $passh);
     }
     if ($email != $CURUSER["email"]) {
         if (!validemail($email)) stderr($lang['takeeditcp_err'], $lang['takeeditcp_not_valid_email']);
         $r = sql_query("SELECT id FROM users WHERE email=" . sqlesc($email)) or sqlerr(__FILE__, __LINE__);
-        if (mysqli_num_rows($r) > 0 || ($CURUSER["passhash"] != make_passhash($CURUSER['secret'], md5($chmailpass)))) stderr($lang['takeeditcp_err'], $lang['takeeditcp_address_taken']);
+        if (mysqli_num_rows($r) > 0 || ($CURUSER["hash4"] != make_passhash($CURUSER['hash2'], hash("ripemd160", $chmailpass),$CURUSER['hash3']))) stderr($lang['takeeditcp_err'], $lang['takeeditcp_address_taken']);
         $changedemail = 1;
     }
     if ($secretanswer != '') {
-        if (strlen($secretanswer) > 40) stderr($lang['takeeditcp_sorry'], $lang['takeeditcp_secret_long']);
+        if (strlen($secretanswer) > 64) stderr($lang['takeeditcp_sorry'], $lang['takeeditcp_secret_long']);
         if (strlen($secretanswer) < 6) stderr($lang['takeeditcp_sorry'], $lang['takeeditcp_secret_short']);
-        $new_secret_answer = md5($secretanswer);
+		$new_secret_answer = h_store($secretanswer.$CURUSER['email']);
         $updateset[] = "hintanswer = " . sqlesc($new_secret_answer);
         $curuser_cache['hintanswer'] = $new_secret_answer;
         $user_cache['hintanswer'] = $new_secret_answer;
@@ -205,7 +206,7 @@ $setbits = $clrbits = 0;
     }
     if ($changedemail) {
         $sec = mksecret();
-        $hash = md5($sec . $email . $sec);
+        $hash = h_store($sec . $email . $sec);
         $obemail = urlencode($email);
         $updateset[] = "editsecret = " . sqlesc($sec);
         $curuser_cache['editsecret'] = $sec;

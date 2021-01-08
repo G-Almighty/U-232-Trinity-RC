@@ -108,7 +108,7 @@ elseif ($do == 'create_invite') {
     if ($arr[0] >= $TRINITY20['invites']) {
         stderr($lang['invites_error'], $lang['invites_limit']);
     }
-    $invite = md5(mksecret());
+    $invite = hash('haval256,4', mksecret());
     sql_query('INSERT INTO invite_codes (sender, invite_added, code) VALUES (' . sqlesc((int) $CURUSER['id']) . ', ' . TIME_NOW . ', ' . sqlesc($invite) . ')') or sqlerr(__FILE__, __LINE__);
     sql_query('UPDATE users SET invites = invites - 1 WHERE id = ' . sqlesc($CURUSER['id'])) or sqlerr(__FILE__, __LINE__);
     $update['invites'] = ($CURUSER['invites'] - 1);

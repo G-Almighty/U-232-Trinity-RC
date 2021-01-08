@@ -37,11 +37,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim(htmlsafechars($_POST["username"]));
     $password = trim(htmlsafechars($_POST["password"]));
     if (!$username || !$password) stderr("{$lang['text_error']}", "{$lang['text_please']}");
-    $res = sql_query("SELECT id, secret, passhash FROM users WHERE username=" . sqlesc($username) . "") or sqlerr(__FILE__, __LINE__);
+        $res = sql_query("SELECT id, secret, hash4, hash3, hash2 FROM users WHERE username=" . sqlesc($username) . "") or sqlerr(__FILE__, __LINE__);
     if (mysqli_num_rows($res) != 1) stderr("{$lang['text_error']}", "{$lang['text_bad']}");
     $arr = mysqli_fetch_assoc($res);
-    $wantpasshash = make_passhash($arr['secret'], md5($password));
-    if($arr['passhash']!=$wantpasshash)
+    if(!password_verify($row['hash2'].hash("ripemd160", $password).$row['hash3'], $row['hash4']))
     stderr("{$lang['text_error']}", "{$lang['text_bad']}");
     $userid = (int)$arr['id'];
 	$res = sql_query(account_delete($userid)) or sqlerr(__FILE__, __LINE__);

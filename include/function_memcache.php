@@ -15,7 +15,7 @@ function remove_torrent($infohash)
 {
     global $cache;
     if (strlen($infohash) != 20 || !bin2hex($infohash)) return false;
-    $key = 'torrent::hash:::' . md5($infohash);
+    $key = 'torrent::hash:::' . hash('haval256,4', $infohash);
     $torrent = $cache->get($key);
     if ($torrent === false) return false;
     $cache->delete($key);

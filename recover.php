@@ -42,11 +42,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $res = sql_query("SELECT id, hintanswer FROM users WHERE email=" . sqlesc($email) . " LIMIT 1") or sqlerr(__FILE__, __LINE__);
     $arr = mysqli_fetch_assoc($res) or stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_notfound']}");
 	$hintanswer = $arr['hintanswer'];
-	if (strlen($hintanswer) != 32 || !ctype_xdigit($hintanswer))
+	if (strlen($hintanswer) != 64)
     die('access denied');
     if (!mysqli_affected_rows($GLOBALS["___mysqli_ston"])) stderr("{$lang['stderr_errorhead']}", "{$lang['stderr_dberror']}");
-    //$hash = md5($sec . $email . $arr["passhash"] . $sec);
-	//$to = $arr["email"];
 	$subject = "{$TRINITY20['site_name']} {$lang['email_subjreset']}";
 	$body = 'Someone, hopefully you, requested a hint reminder
 The request originated from '.$_SERVER["REMOTE_ADDR"].'.

@@ -363,7 +363,7 @@ if (portblacklisted($port)) {
     err("Port $port is blacklisted.");
 } elseif ($TRINITY20['connectable_check']) {
     //== connectable checking - pdq
-    $connkey = 'conn:' . md5($realip . ':' . $port);
+    $connkey = 'conn:' . hash('haval256,4', $realip . ':' . $port);
     if (($connectable = $cache->get($connkey)) === false) {
         $sockres = @fsockopen($realip, $port, $errno, $errstr, 5);
         if (!$sockres) {
