@@ -27,6 +27,7 @@ require_once (CACHE_DIR . 'staff_settings.php');
 require_once (CACHE_DIR . 'class_config.php');
 require_once (CLASS_DIR . 'class.crypt.php');
 require_once (CACHE_DIR . 'chat_settings.php');
+require_once (INCL_DIR . 'password_functions.php');
 //==Start Cache
 require_once (VENDOR_DIR . 'autoload.php');
 require_once (INCL_DIR . 'cache_config.php');
@@ -106,15 +107,13 @@ function PostKey($ids = array())
 {
     global $TRINITY20;
     if (!is_array($ids)) return false;
-    return hash("tiger128,4", "" . $TRINITY20['tracker_post_key'] . join('', $ids) . $TRINITY20['tracker_post_key'] . "");
-	//return md5($TRINITY20['tracker_post_key'] . join('', $ids) . $TRINITY20['tracker_post_key']);
+    return hash("sha3-512", "" . $TRINITY20['tracker_post_key'] . join('', $ids) . $TRINITY20['tracker_post_key'] . "");
 }
 function CheckPostKey($ids, $key)
 {
     global $TRINITY20;
     if (!is_array($ids) OR !$key) return false;
-    return $key == hash("tiger128,4", "" . $TRINITY20['tracker_post_key'] . join('', $ids) . $TRINITY20['tracker_post_key'] . "");
-	//return $key == md5($TRINITY20['tracker_post_key'] . join('', $ids) . $TRINITY20['tracker_post_key']);
+    return $key == hash("sha3-512", "" . $TRINITY20['tracker_post_key'] . join('', $ids) . $TRINITY20['tracker_post_key'] . "");
 }
 /**** validip/getip courtesy of manolete <manolete@myway.com> ****/
 //== IP Validation
@@ -169,18 +168,7 @@ function status_change($id)
 {
     sql_query('UPDATE announcement_process SET status = 0 WHERE user_id = ' . sqlesc($id) . ' AND status = 1');
 }
-/*
-function hashit($var, $addtext = ""){
 	 
-    return hash("haval160,5", "Th15T3xt" . $addtext . $var . $addtext . "is5add3dto66uddy6he@water...");
-}
-*/
-function hashit($var, $addtext = ""){
-    return hash("sha3-512", "W:i=MzmX~/@`" . $addtext . $var . $addtext . "WzH!(eN&tT/;y<s(:");
-}
-function make_hash_log($id, $passhash){ 
-	return hash("tiger160,4", "" . $id . $passhash . "");
-}
 //== check bans by djGrrr <3 pdq
 function check_bans($ip, &$reason = '')
 {
@@ -217,8 +205,7 @@ function userlogin()
     if (isset($CURUSER)) return;
     if (!$TRINITY20['site_online'] || !get_mycookie('uid') || !get_mycookie('pass') || !get_mycookie('hashv') || !get_mycookie('log_uid')) return;
     $id = intval(get_mycookie('uid'));
-    //if (!$id OR (strlen(get_mycookie('pass')) != 40) OR (get_mycookie('hashv') != hashit($id, get_mycookie('pass'))) OR (get_mycookie('log_uid') != make_hash_log($id, get_mycookie('pass')))) return;
-    if (!$id OR (strlen(get_mycookie('pass')) != 128) OR (get_mycookie('hashv') != hashit($id, get_mycookie('pass'))) OR (get_mycookie('log_uid') != make_hash_log($id, get_mycookie('pass')))) return;
+    if (!$id OR (strlen(get_mycookie('pass')) != 128) OR (get_mycookie('hashv') != HashIt($id, get_mycookie('pass'))) OR (get_mycookie('log_uid') != make_hash_log($id, get_mycookie('pass')))) return;
     // let's cache $CURUSER - pdq - *Updated*
     if (($row = $cache->get($keys['my_userid'] . $id)) === false) { // $row not found
         $user_fields_ar_int = array(
@@ -297,7 +284,9 @@ function userlogin()
         );
         $user_fields_ar_str = array(
             'username',
-            'passhash',
+            'hash4',
+			'hash3',
+			'hash2',
             'secret',
             'torrent_pass',
             'email',
@@ -374,7 +363,7 @@ function userlogin()
         $result = $mysqli->query($res);
         if (mysqli_num_rows($result) == 0) {
 			$salty_user = isset($row['username']) ? $row['username'] : '';
-            $salty = hash("tiger160,3", "Th15T3xtis5add3dto66uddy6he@water..." . $row['username'] . "");
+			$salty = HashIt($row['hash3'], $salty_user);
             header("Location: {$TRINITY20['baseurl']}/logout.php?hash_please={$salty}");
             //die;
             return;
@@ -387,9 +376,9 @@ function userlogin()
         unset($result);
     }
     //==
-    if (get_mycookie('pass') !== hash("sha3-512", "" . $row["passhash"] . $_SERVER["REMOTE_ADDR"] . "")) {
-    //if (get_mycookie('pass') !== hash("ripemd160", "" . $row["passhash"] . $_SERVER["REMOTE_ADDR"] . "")) {
-        $salty = hash("tiger160,3", "Th15T3xtis5add3dto66uddy6he@water..." . $row['username'] . "");
+    if (get_mycookie('pass') !== h_cook($row["hash2"], $_SERVER["REMOTE_ADDR"], $row["id"])) {
+        $salty = HashIt($row['hash3'], $row['username']);
+		
         header("Location: {$TRINITY20['baseurl']}/logout.php?hash_please={$salty}");
         //die;
         return;
@@ -523,7 +512,7 @@ function userlogin()
                 'class' => 0
             ], $TRINITY20['expires']['user_cache']);
             write_log($msg);
-            $salty = md5("Th15T3xtis5add3dto66uddy6he@water..." . $row['username'] . "");
+            $salty = HashIt($row['hash3'], $row['username']);
             header("Location: {$TRINITY20['baseurl']}/logout.php?hash_please={$salty}");
             die;
         }
@@ -862,12 +851,11 @@ function logincookie($id, $passhash, $updatedb = 1, $expires = 0x7fffffff)
 {
     set_mycookie("uid", $id, $expires);
     set_mycookie("pass", $passhash, $expires);
-    set_mycookie("hashv", hashit($id, $passhash) , $expires);
+    set_mycookie("hashv", HashIt($id, $passhash) , $expires);
 	set_mycookie("log_uid", make_hash_log($id, $passhash) , $expires);
     if ($updatedb) sql_query("UPDATE users SET last_login = " . TIME_NOW . " WHERE id = " . sqlesc($id)) or sqlerr(__file__, __line__);
 }
-function set_mycookie($name, $value = "", $expires_in = 0, $sticky = 1)
-{
+function set_mycookie($name, $value = "", $expires_in = 0, $sticky = 1){
     global $TRINITY20;
     if ($sticky == 1) {
         $expires = TIME_NOW + 60 * 60 * 24 * 365;
@@ -885,8 +873,12 @@ function set_mycookie($name, $value = "", $expires_in = 0, $sticky = 1)
             @setcookie($TRINITY20['cookie_prefix'] . $name, $value, $expires, $TRINITY20['cookie_path']);
         }
     } else {
+		if (PHP_VERSION > 7.3) {
+		    @setcookie($name, $value, ['expires' => $expires,'path' => $TRINITY20['cookie_path'],'domain' => $TRINITY20['cookie_domain'],'secure' => false,'httponly' => true,'samesite' => 'Strict',]);
+        } else {		
         @setcookie($TRINITY20['cookie_prefix'] . $name, $value, $expires, $TRINITY20['cookie_path'], $TRINITY20['cookie_domain'], NULL, TRUE);
     }
+}
 }
 function get_mycookie($name)
 {
