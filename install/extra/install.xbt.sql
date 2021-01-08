@@ -256,6 +256,45 @@ CREATE TABLE IF NOT EXISTS `ajax_chat_invitations` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `ajax_chat_messages`
+--
+
+DROP TABLE IF EXISTS `ajax_chat_messages`;
+CREATE TABLE IF NOT EXISTS `ajax_chat_messages` (
+	`id` int(11) NOT NULL AUTO_INCREMENT,
+	`userID` int(11) NOT NULL DEFAULT '0',
+	`userName` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT '',
+	`userRole` int(2) NOT NULL DEFAULT '0',
+	`channel` int(11) NOT NULL DEFAULT '0',
+	`dateTime` datetime NOT NULL DEFAULT '2000-01-01 00:00:10',
+	`ip` varbinary(16) DEFAULT NULL,
+	`text` text CHARACTER SET utf8,
+	PRIMARY KEY (`id`),
+	INDEX `message_condition` (`id`, `channel`, `datetime`),
+	INDEX (`datetime`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `ajax_chat_online`
+--
+
+DROP TABLE IF EXISTS `ajax_chat_online`;
+CREATE TABLE IF NOT EXISTS `ajax_chat_online` (
+	`userID` int(11) NOT NULL DEFAULT '0',
+	`userName` varchar(64) CHARACTER SET utf8 NOT NULL DEFAULT '',
+	`userRole` int(2) NOT NULL DEFAULT '0',
+	`channel` int(11) NOT NULL DEFAULT '0',
+	`dateTime` datetime NOT NULL DEFAULT '2000-01-01 00:00:10',
+	`ip` varbinary(16) DEFAULT NULL,
+	PRIMARY KEY (`userID`),
+	INDEX (`userName`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `announcement_main`
 --
 
@@ -425,6 +464,103 @@ CREATE TABLE IF NOT EXISTS `bans` (
   `comment` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `first` bigint(11) DEFAULT NULL DEFAULT '0',
   `last` bigint(11) DEFAULT NULL DEFAULT '0'
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bet`
+--
+
+DROP TABLE IF EXISTS `bet`;
+CREATE TABLE IF NOT EXISTS `bet` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(150) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `description` text COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `active` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+  `bet_close_date` datetime DEFAULT NULL,
+  `allPaid` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `winner` tinyint(3) UNSIGNED NOT NULL DEFAULT 0,
+  `topicid` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `active` (`active`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `betchoices`
+--
+
+DROP TABLE IF EXISTS `betchoices`;
+CREATE TABLE IF NOT EXISTS `betchoices` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `betid` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `name` varchar(150) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `active` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+  `choice1` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice2` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice3` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice4` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice5` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice6` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice7` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice8` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice9` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `choice10` varchar(40) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `payout1` decimal(4,2) DEFAULT NULL,
+  `payout2` decimal(4,2) DEFAULT NULL,
+  `payout3` decimal(4,2) DEFAULT NULL,
+  `payout4` decimal(4,2) DEFAULT NULL,
+  `payout5` decimal(4,2) DEFAULT NULL,
+  `payout6` decimal(4,2) DEFAULT NULL,
+  `payout7` decimal(4,2) DEFAULT NULL,
+  `payout8` decimal(4,2) DEFAULT NULL,
+  `payout9` decimal(4,2) DEFAULT NULL,
+  `payout10` decimal(4,2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `betid` (`betid`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bets`
+--
+
+DROP TABLE IF EXISTS `bets`;
+CREATE TABLE IF NOT EXISTS `bets` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `userid` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `betid` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `choice` tinyint(2) UNSIGNED NOT NULL DEFAULT 0,
+  `bet` bigint(13) UNSIGNED NOT NULL DEFAULT 0,
+  `paid` tinyint(1) UNSIGNED NOT NULL DEFAULT 0,
+  `gameid` int(11) NOT NULL DEFAULT 0,
+  `bonus` int(11) NOT NULL DEFAULT 0,
+  `optionid` int(11) NOT NULL DEFAULT 0,
+  `date` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `gameid` (`gameid`),
+  KEY `userid` (`userid`),
+  KEY `betid` (`betid`),
+  KEY `choice` (`choice`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `bet_winns`
+--
+
+DROP TABLE IF EXISTS `bet_winns`;
+CREATE TABLE IF NOT EXISTS `bet_winns` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `betid` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `choice` tinyint(2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `betid` (`betid`),
+  KEY `choice` (`choice`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 -- --------------------------------------------------------
@@ -4503,3 +4639,15 @@ ALTER TABLE `xbt_scrape_log`
 ALTER TABLE `messages` ADD `staff_id` int(10) unsigned NOT NULL DEFAULT '0';
 ALTER TABLE `staffmessages` ADD `new`  enum('yes','no') NOT NULL default 'no';
 ALTER TABLE `users` ADD `pin_code` INT(4) NOT NULL DEFAULT '0';
+ALTER TABLE `doublesignup` CHANGE `login_hash` `login_hash` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL; 
+ALTER TABLE `invite_codes` CHANGE `code` `code` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL; 
+ALTER TABLE `subtitles` CHANGE `filename` `filename` VARCHAR(70) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL; 
+ALTER TABLE `users` ADD `hash4` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL AFTER `passhash`;
+ALTER TABLE `users` ADD `hash3` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL AFTER `hash1`;
+ALTER TABLE `users` ADD `hash2` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL AFTER `forums_mod`;
+ALTER TABLE `users` CHANGE `secret` `secret` VARCHAR(24) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL;
+ALTER TABLE `users` CHANGE `loginhash` `loginhash` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL;
+ALTER TABLE `users` CHANGE `passkey` `passkey` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL;
+ALTER TABLE `users` CHANGE `editsecret` `editsecret` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL;
+ALTER TABLE `users` CHANGE `hash1` `hash1` VARCHAR(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL;
+ALTER TABLE `users` CHANGE `torrent_pass` `torrent_pass` VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci DEFAULT NULL;
