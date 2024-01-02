@@ -1100,9 +1100,10 @@ function get_time_offset()
 function get_time_offset()
 {
     global $CURUSER, $TRINITY20;
+    //$r = 0;
     $user_t_offset = $CURUSER['time_offset'] ?? '';
     $user_dst = $CURUSER['dst_in_use'] ?? '';
-    $r = ($user_t_offset != "") * 3600;
+    $r = ($user_t_offset) * 3600;
     if ($TRINITY20['time_adjust']) {
         $r += ($TRINITY20['time_adjust'] * 60);
     }
